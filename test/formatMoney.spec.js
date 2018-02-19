@@ -26,7 +26,7 @@ test('accounting.formatMoney() handles custom formatting options', (t) => {
     pos: '%s %v',
     neg: '%s (%v)',
     zero:'%s  --'
-  }
+  };
   t.is(accounting.formatMoney(0, { symbol: 'GBP',  format: format }), 'GBP  --');
   t.is(accounting.formatMoney(-1000, { symbol: 'GBP',  format: format }), 'GBP (1,000.00)');
   t.is(accounting.formatMoney(1000, { symbol: 'GBP',  format: { neg: '--%v %s' }}), 'GBP1,000.00');
