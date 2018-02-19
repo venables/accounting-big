@@ -4,7 +4,8 @@
 * [FIXED] All operations support arbitrary-precision numbers (via `Big.js`, allowing values to go extremely large or precise.
 * [NEW] - Rollup.js is used for release packaging.
 * [NEW] - Tests use `ava` as a runner and `nyc` for coverage.
-* [NEW] - Linting is performed by `eslint`
+* [NEW] - Linting is performed by `eslint`.
+* [NEW] - CI provided by `travis` and `coveralls`
 
 ## Pre-fork changes:
 
