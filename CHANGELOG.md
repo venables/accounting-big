@@ -1,7 +1,9 @@
 # Changelog
 
 ## 1.0.0 - Arbitrary Precision
-* [FIXED] All operations support arbitrary-precision numbers (via `Big.js`, allowing values to go extremely large or precise.
+This is the first version of accounting-big after forking from accounting.js in order to support arbitrary-precision numbers.
+
+* [FIXED] All operations support arbitrary-precision numbers (via `Big.js`), allowing values to go extremely large or precise.  Any number will work without risk of rounding or precision errors.
 * [NEW] - Rollup.js is used for release packaging.
 * [NEW] - Tests use `ava` as a runner and `nyc` for coverage.
 * [NEW] - Linting is performed by `eslint`.
