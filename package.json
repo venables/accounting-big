@@ -27,10 +27,11 @@
   "main": "dist/accounting.js",
   "scripts": {
     "build": "rollup -c && rollup -c rollup.config.prod.js",
-    "test": "ava"
+    "test": "nyc ava"
   },
   "devDependencies": {
     "ava": "^0.25.0",
+    "nyc": "^11.4.1",
     "rollup": "^0.56.2",
     "rollup-plugin-uglify": "^3.0.0"
   }
