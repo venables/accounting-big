@@ -1,7 +1,7 @@
 {
   "name": "accounting-big",
   "description": "Arbitrary-precision number, money and currency formatting",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Matt Venables <mattvenables@gmail.com>",
   "homepage": "http://github.com/venables/accounting-big",
   "license": "MIT",
