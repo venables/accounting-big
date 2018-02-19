@@ -4,7 +4,7 @@
   "homepage"    : "http://openexchangerates.github.io/accounting.js",
   "ignore"      : ["**/.*", "tests"],
   "keywords"    : ["accounting", "number", "money", "currency", "format", "utilities", "finance", "exchange"],
-  "main"        : "lib/index.js",
+  "main"        : "dist/accounting.js",
   "name"        : "accounting",
   "version"     : "0.4.2"
 }
