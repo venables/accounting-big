@@ -71,7 +71,7 @@ test('accounting.formatNumber() allows setting thousand and decimal separators',
   t.is(accounting.formatNumber(98765432.12, 0, '\\', '|'), '98\\765\\432');
   t.is(accounting.formatNumber(98765432.12, 1, '<', '>'), '98<765<432>1');
   t.is(accounting.formatNumber(98765432.12, 2, '&', '*'), '98&765&432*12');
-  t.is(accounting.formatNumber(98765432.12, 3, "'", '\''), '98\'765\'432\'120');
+  t.is(accounting.formatNumber(98765432.12, 3, '\'', '\''), '98\'765\'432\'120');
   t.is(accounting.formatNumber(98765432.12, 4, '[', ']'), '98[765[432]1200');
   t.is(accounting.formatNumber(4999.99, 2, '.', ','), '4.999,99');
 });
