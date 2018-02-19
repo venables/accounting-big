@@ -10,6 +10,17 @@ test('accounting.formatMoney() works for small numbers', (t) => {
   t.is(accounting.formatMoney(12345678), '$12,345,678.00');
 });
 
+test('accounting.formatMoney() works for large numbers', (t) => {
+  const opts = {
+    precision: 18,
+    symbol: 'ETH',
+    format: '%v %s'
+  };
+
+  t.is(accounting.formatMoney('12345670.123456789123456789', opts), '12,345,670.123456789123456789 ETH');
+  t.is(accounting.formatMoney('12345678901234567890.123456789123456789', opts), '12,345,678,901,234,567,890.123456789123456789 ETH');
+});
+
 test('accounting.formatMoney() works for negative numbers', (t) => {
   t.is(accounting.formatMoney(-123), '$-123.00');
   t.is(accounting.formatMoney(-123.45), '$-123.45');

@@ -32,6 +32,9 @@ test('accounting.formatNumber() works for large numbers', (t) => {
   t.is(accounting.formatNumber(98765432.12, 2), '98,765,432.12');
   t.is(accounting.formatNumber(98765432.12, 3), '98,765,432.120');
   t.is(accounting.formatNumber(98765432.12, 4), '98,765,432.1200');
+
+  t.is(accounting.formatNumber('12345670.123456789123456789', { precision: 18 }), '12,345,670.123456789123456789');
+  t.is(accounting.formatNumber('12345678901234567890.123456789123456789', { precision: 18 }), '12,345,678,901,234,567,890.123456789123456789');
 });
 
 test('accounting.formatNumber() works for negative numbers', (t) => {
@@ -47,6 +50,9 @@ test('accounting.formatNumber() works for negative numbers', (t) => {
   t.is(accounting.formatNumber(-98765432.12, 2), '-98,765,432.12');
   t.is(accounting.formatNumber(-98765432.12, 3), '-98,765,432.120');
   t.is(accounting.formatNumber(-98765432.12, 4), '-98,765,432.1200');
+
+  t.is(accounting.formatNumber('-12345670.123456789123456789', { precision: 18 }), '-12,345,670.123456789123456789');
+  t.is(accounting.formatNumber('-12345678901234567890.123456789123456789', { precision: 18 }), '-12,345,678,901,234,567,890.123456789123456789');
 });
 
 
