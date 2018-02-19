@@ -962,42 +962,40 @@ var lib = {};
 // Current version
 lib.version = '0.4.2';
 
-
 /* --- Exposed settings --- */
 
 // The library's settings configuration object. Contains default parameters for
 // currency and number formatting
 lib.settings = {
   currency: {
-    symbol : '$',   // default currency symbol is '$'
-    format : '%s%v',  // controls output: %s = symbol, %v = value (can be object, see docs)
-    decimal : '.',    // decimal point separator
-    thousand : ',',   // thousands separator
-    precision : 2,    // decimal places
-    grouping : 3    // digit grouping (not implemented yet)
+    symbol: '$', // default currency symbol is '$'
+    format: '%s%v', // controls output: %s = symbol, %v = value (can be object, see docs)
+    decimal: '.', // decimal point separator
+    thousand: ',', // thousands separator
+    precision: 2, // decimal places
+    grouping: 3 // digit grouping (not implemented yet)
   },
   number: {
-    precision : 0,    // default precision on numbers is 0
-    grouping : 3,   // digit grouping (not implemented yet)
-    thousand : ',',
-    decimal : '.'
+    precision: 0, // default precision on numbers is 0
+    grouping: 3, // digit grouping (not implemented yet)
+    thousand: ',',
+    decimal: '.'
   }
 };
-
 
 /* --- Internal Helper Methods --- */
 
 // Store reference to possibly-available ECMAScript 5 methods for later
 var nativeMap = Array.prototype.map,
-  nativeIsArray = Array.isArray,
-  toString = Object.prototype.toString;
+    nativeIsArray = Array.isArray,
+    toString = Object.prototype.toString;
 
 /**
  * Tests whether supplied parameter is a string
  * from underscore.js
  */
 function isString(obj) {
-  return !!(obj === '' || (obj && obj.charCodeAt && obj.substr));
+  return !!(obj === '' || obj && obj.charCodeAt && obj.substr);
 }
 
 /**
@@ -1041,7 +1039,9 @@ function defaults(object, defs) {
  * Defers to native Array.map if available
  */
 function map(obj, iterator, context) {
-  var results = [], i, j;
+  var results = [],
+      i,
+      j;
 
   if (!obj) return results;
 
@@ -1049,7 +1049,7 @@ function map(obj, iterator, context) {
   if (nativeMap && obj.map === nativeMap) return obj.map(iterator, context);
 
   // Fallback for native .map:
-  for (i = 0, j = obj.length; i < j; i++ ) {
+  for (i = 0, j = obj.length; i < j; i++) {
     results[i] = iterator.call(context, obj[i], i, obj);
   }
   return results;
@@ -1060,9 +1060,8 @@ function map(obj, iterator, context) {
  */
 function checkPrecision(val, base) {
   val = Math.round(Math.abs(val));
-  return isNaN(val)? base : val;
+  return isNaN(val) ? base : val;
 }
-
 
 /**
  * Parses a format string or object and returns format obj for use in rendering
@@ -1077,33 +1076,31 @@ function checkCurrencyFormat(format) {
   var defaults = lib.settings.currency.format;
 
   // Allow function as format parameter (should return string or object):
-  if ( typeof format === 'function' ) format = format();
+  if (typeof format === 'function') format = format();
 
   // Format can be a string, in which case `value` ("%v") must be present:
-  if ( isString( format ) && format.match('%v') ) {
+  if (isString(format) && format.match('%v')) {
 
     // Create and return positive, negative and zero formats:
     return {
-      pos : format,
-      neg : format.replace('-', '').replace('%v', '-%v'),
-      zero : format
+      pos: format,
+      neg: format.replace('-', '').replace('%v', '-%v'),
+      zero: format
     };
 
     // If no format, or object is missing valid positive value, use defaults:
-  } else if ( !format || !format.pos || !format.pos.match('%v') ) {
+  } else if (!format || !format.pos || !format.pos.match('%v')) {
 
     // If defaults is a string, casts it to an object for faster checking next time:
-    return ( !isString( defaults ) ) ? defaults : lib.settings.currency.format = {
-      pos : defaults,
-      neg : defaults.replace('%v', '-%v'),
-      zero : defaults
+    return !isString(defaults) ? defaults : lib.settings.currency.format = {
+      pos: defaults,
+      neg: defaults.replace('%v', '-%v'),
+      zero: defaults
     };
-
   }
   // Otherwise, assume format was fine:
   return format;
 }
-
 
 /* --- API Methods --- */
 
@@ -1124,7 +1121,7 @@ function checkCurrencyFormat(format) {
 function unformatBig(value, decimal) {
   // Recursively unformat arrays:
   if (isArray(value)) {
-    return map(value, function(val) {
+    return map(value, function (val) {
       return unformatBig(val, decimal);
     });
   }
@@ -1135,17 +1132,16 @@ function unformatBig(value, decimal) {
   // Return the value as-is if it's already a number:
   try {
     return new big(value);
-  } catch(err) {}
+  } catch (err) {}
 
   // Default decimal point comes from settings, but could be set to eg. "," in opts:
   decimal = decimal || lib.settings.number.decimal;
 
   // Build regex to strip out everything except digits, decimal point and minus sign:
   var regex = new RegExp('[^0-9-' + decimal + ']', ['g']);
-  var unformatted = `${value}`
-    .replace(/\((?=\d+)(.*)\)/, '-$1') // replace bracketed values with negatives
-    .replace(regex, '')         // strip out any cruft
-    .replace(decimal, '.');      // make sure decimal point is standard
+  var unformatted = ('' + value).replace(/\((?=\d+)(.*)\)/, '-$1') // replace bracketed values with negatives
+  .replace(regex, '') // strip out any cruft
+  .replace(decimal, '.'); // make sure decimal point is standard
 
   try {
     return new big(unformatted);
@@ -1160,7 +1156,7 @@ lib.parseBig = unformatBig;
 function unformat(value, decimal) {
   // Recursively unformat arrays:
   if (isArray(value)) {
-    return map(value, function(val) {
+    return map(value, function (val) {
       return Number(unformatBig(val, decimal));
     });
   }
@@ -1170,7 +1166,6 @@ function unformat(value, decimal) {
 
 lib.unformat = unformat;
 lib.parse = unformat;
-
 
 /**
  * Implementation of toFixed() that treats floats more like decimals
@@ -1196,7 +1191,7 @@ lib.toFixed = toFixed;
 function formatNumber(number, precision, thousand, decimal) {
   // Resursively format arrays:
   if (isArray(number)) {
-    return map(number, function(val) {
+    return map(number, function (val) {
       return formatNumber(val, precision, thousand, decimal);
     });
   }
@@ -1205,14 +1200,11 @@ function formatNumber(number, precision, thousand, decimal) {
   number = unformatBig(number);
 
   // Build options object from second param (if object) or all params, extending defaults:
-  var opts = defaults(
-    (isObject(precision) ? precision : {
-      precision : precision,
-      thousand : thousand,
-      decimal : decimal
-    }),
-    lib.settings.number
-  );
+  var opts = defaults(isObject(precision) ? precision : {
+    precision: precision,
+    thousand: thousand,
+    decimal: decimal
+  }, lib.settings.number);
 
   // Clean up precision
   var usePrecision = checkPrecision(opts.precision);
@@ -1237,7 +1229,6 @@ function formatNumber(number, precision, thousand, decimal) {
 lib.formatNumber = formatNumber;
 lib.format = formatNumber;
 
-
 /**
  * Format a number into currency
  *
@@ -1252,7 +1243,7 @@ lib.format = formatNumber;
 function formatMoney(number, symbol, precision, thousand, decimal, format) {
   // Resursively format arrays:
   if (isArray(number)) {
-    return map(number, function(val){
+    return map(number, function (val) {
       return formatMoney(val, symbol, precision, thousand, decimal, format);
     });
   }
@@ -1261,16 +1252,13 @@ function formatMoney(number, symbol, precision, thousand, decimal, format) {
   number = unformatBig(number);
 
   // Build options object from second param (if object) or all params, extending defaults:
-  var opts = defaults(
-    (isObject(symbol) ? symbol : {
-      symbol : symbol,
-      precision : precision,
-      thousand : thousand,
-      decimal : decimal,
-      format : format
-    }),
-    lib.settings.currency
-  );
+  var opts = defaults(isObject(symbol) ? symbol : {
+    symbol: symbol,
+    precision: precision,
+    thousand: thousand,
+    decimal: decimal,
+    format: format
+  }, lib.settings.currency);
 
   // Check format (returns object with pos, neg and zero):
   var formats = checkCurrencyFormat(opts.format);
@@ -1283,7 +1271,6 @@ function formatMoney(number, symbol, precision, thousand, decimal, format) {
 }
 
 lib.formatMoney = formatMoney;
-
 
 /**
  * Format a list of numbers into an accounting column, padding with whitespace
@@ -1301,52 +1288,53 @@ function formatColumn(list, symbol, precision, thousand, decimal, format) {
   if (!list || !isArray(list)) return [];
 
   // Build options object from second param (if object) or all params, extending defaults:
-  var opts = defaults(
-      (isObject(symbol) ? symbol : {
-        symbol : symbol,
-        precision : precision,
-        thousand : thousand,
-        decimal : decimal,
-        format : format
-      }),
-      lib.settings.currency
-    ),
+  var opts = defaults(isObject(symbol) ? symbol : {
+    symbol: symbol,
+    precision: precision,
+    thousand: thousand,
+    decimal: decimal,
+    format: format
+  }, lib.settings.currency),
 
-    // Check format (returns object with pos, neg and zero), only need pos for now:
-    formats = checkCurrencyFormat(opts.format),
 
-    // Whether to pad at start of string or after currency symbol:
-    padAfterSymbol = formats.pos.indexOf('%s') < formats.pos.indexOf('%v') ? true : false,
+  // Check format (returns object with pos, neg and zero), only need pos for now:
+  formats = checkCurrencyFormat(opts.format),
 
-    // Store value for the length of the longest string in the column:
-    maxLength = 0,
 
-    // Format the list according to options, store the length of the longest string:
-    formatted = map(list, function(val) {
-      if (isArray(val)) {
-        // Recursively format columns if list is a multi-dimensional array:
-        return lib.formatColumn(val, opts);
-      } else {
-        // Clean up the value
-        val = unformatBig(val);
+  // Whether to pad at start of string or after currency symbol:
+  padAfterSymbol = formats.pos.indexOf('%s') < formats.pos.indexOf('%v') ? true : false,
 
-        // Choose which format to use for this value (pos, neg or zero):
-        var useFormat = val.gt(0) ? formats.pos : val.lt(0) ? formats.neg : formats.zero;
 
-        // Format this value, push into formatted list and save the length:
-        var fVal = useFormat.replace('%s', opts.symbol).replace('%v', formatNumber(val.abs(), checkPrecision(opts.precision), opts.thousand, opts.decimal));
+  // Store value for the length of the longest string in the column:
+  maxLength = 0,
 
-        if (fVal.length > maxLength) maxLength = fVal.length;
-        return fVal;
-      }
-    });
+
+  // Format the list according to options, store the length of the longest string:
+  formatted = map(list, function (val) {
+    if (isArray(val)) {
+      // Recursively format columns if list is a multi-dimensional array:
+      return lib.formatColumn(val, opts);
+    } else {
+      // Clean up the value
+      val = unformatBig(val);
+
+      // Choose which format to use for this value (pos, neg or zero):
+      var useFormat = val.gt(0) ? formats.pos : val.lt(0) ? formats.neg : formats.zero;
+
+      // Format this value, push into formatted list and save the length:
+      var fVal = useFormat.replace('%s', opts.symbol).replace('%v', formatNumber(val.abs(), checkPrecision(opts.precision), opts.thousand, opts.decimal));
+
+      if (fVal.length > maxLength) maxLength = fVal.length;
+      return fVal;
+    }
+  });
 
   // Pad each number in the list and send back the column of numbers:
-  return map(formatted, function(val) {
+  return map(formatted, function (val) {
     // Only if this is a string (not a nested array, which would have already been padded):
     if (isString(val) && val.length < maxLength) {
       // Depending on symbol position, pad after symbol or at index 0:
-      return padAfterSymbol ? val.replace(opts.symbol, opts.symbol+(new Array(maxLength - val.length + 1).join(' '))) : (new Array(maxLength - val.length + 1).join(' ')) + val;
+      return padAfterSymbol ? val.replace(opts.symbol, opts.symbol + new Array(maxLength - val.length + 1).join(' ')) : new Array(maxLength - val.length + 1).join(' ') + val;
     }
     return val;
   });
