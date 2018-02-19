@@ -1,6 +1,6 @@
 # Changelog
 
-## master
+## 1.0.0 - Arbitrary Precision
 * [FIXED] All operations support arbitrary-precision numbers (via `Big.js`, allowing values to go extremely large or precise.
 * [NEW] - Rollup.js is used for release packaging.
 * [NEW] - Tests use `ava` as a runner and `nyc` for coverage.
