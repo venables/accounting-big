@@ -1,9 +1,29 @@
-**accounting.js** is a tiny JavaScript library for number, money and currency parsing/formatting. It's lightweight, fully localisable, has no dependencies, and works great client-side or server-side. Use standalone or as a nodeJS/npm and AMD/requireJS module.
+# accounting-big
 
-Visit the plugin homepage for demos and documentation: **http://openexchangerates.github.io/accounting.js/**
+Arbitrary-precision number, money and currency formatting for the browser or the server.
 
-Please checkout or download the latest stable tag before using in production. [Bug reports](https://github.com/openexchangerates/accounting.js/issues) and pull requests are welcome.
+`accounting-big` is a fork of [accounting.js](https://github.com/openexchangerates/accounting.js) which has been updated to support arbitrary-precision numbers.  It can handle **any number** without risk of rounding or precision errors, which is extremely important when working with money.
 
-Maintained by [Open Exchange Rates](https://openexchangerates.org "Free reliable exchange rates/currency conversion data API") and originally by [@josscrowcroft](http://twitter.com/josscrowcroft) and other [contributors](https://github.com/openexchangerates/accounting.js/contributors).
+## Installation
 
----
+```
+yarn add accounting-big
+```
+
+## Usage
+
+```js
+import 'accounting' from 'accounting-big';
+
+accounting.formatMoney('1234567.2');
+// => "$1,234,567.20"
+```
+
+The full API can be found on the [accounting.js website](http://openexchangerates.github.io/accounting.js).
+
+
+## Testing
+
+```
+yarn test
+```

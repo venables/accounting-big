@@ -5,6 +5,6 @@
   "author"      : "Matt Venables <mattvenables@gmail.com>",
   "description" : "Arbitrary-precision number, money and currency formatting",
   "homepage"    : "http://github.com/venables/accounting-big",
-  "ignore"      : ["**/.*", "tests"],
+  "ignore"      : ["**/.*", "test"],
   "keywords"    : ["accounting", "number", "money", "currency", "format", "utilities", "finance", "exchange"]
 }
