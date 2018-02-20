@@ -945,22 +945,13 @@ var big = createCommonjsModule(function (module) {
 })(commonjsGlobal);
 });
 
-/*!
- * accounting.js v0.4.2
- * Copyright 2014 Open Exchange Rates
- *
- * Freely distributable under the MIT license.
- * Portions of accounting.js are inspired or borrowed from underscore.js
- *
- * Full details and documentation:
- * http://openexchangerates.github.io/accounting.js/
- */
+var version = "1.0.1";
 
 // Create the local library object, to be exported or referenced globally later
 var lib = {};
 
 // Current version
-lib.version = '0.4.2';
+lib.version = version;
 
 /* --- Exposed settings --- */
 

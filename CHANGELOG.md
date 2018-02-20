@@ -1,5 +1,15 @@
 # Changelog
 
+## master
+
+* [IMPROVED] Auto-load version from package.json
+* [IMPROVED] Use babel-preset-env instead of babel-preset-2015
+* [IMPROVED] Add prebuild, pretest, and prepublish scripts
+
+## 1.0.1
+
+* [FIXED] Bundled code is now transpiled to ES5 for older browsers.
+
 ## 1.0.0 - Arbitrary Precision
 This is the first version of accounting-big after forking from accounting.js in order to support arbitrary-precision numbers.
 
