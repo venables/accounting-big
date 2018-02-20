@@ -14,11 +14,13 @@ export default {
     sourcemap: true
   },
   plugins: [
+    resolve(),
+    commonjs({
+      include: 'node_modules/**'
+    }),
     babel({
       exclude: 'node_modules/**',
     }),
-    resolve(),
-    commonjs(),
     sourcemaps()
   ]
 };
