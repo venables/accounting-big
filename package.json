@@ -1,10 +1,21 @@
 {
   "name": "accounting-big",
-  "description": "Arbitrary-precision number, money and currency formatting",
   "version": "1.0.1",
+  "description": "Arbitrary-precision number, money and currency formatting",
   "author": "Matt Venables <mattvenables@gmail.com>",
   "homepage": "http://github.com/venables/accounting-big",
   "license": "MIT",
+  "main": "dist/accounting.js",
+  "scripts": {
+    "build": "rollup -c && rollup -c rollup.config.prod.js",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "format": "eslint --fix lib test",
+    "lint": "eslint lib test",
+    "prebuild": "yarn lint",
+    "prepublish": "yarn build",
+    "pretest": "yarn build",
+    "test": "nyc ava"
+  },
   "keywords": [
     "accounting",
     "number",
@@ -23,14 +34,6 @@
   "repository": {
     "type": "git",
     "url": "git://github.com/venables/accounting-big.git"
-  },
-  "main": "dist/accounting.js",
-  "scripts": {
-    "build": "rollup -c && rollup -c rollup.config.prod.js",
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "format": "eslint --fix lib test",
-    "lint": "eslint lib test",
-    "test": "eslint lib test && nyc ava"
   },
   "devDependencies": {
     "ava": "^0.25.0",
