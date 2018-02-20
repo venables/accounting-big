@@ -2,10 +2,12 @@
 
 ## master
 
+* [NEW] Added `pkg.module` support for ES modules
 * [IMPROVED] Auto-load version from package.json.
 * [IMPROVED] Use babel-preset-env instead of babel-preset-2015.
 * [IMPROVED] Add prebuild, pretest, and prepublish scripts.
 * [IMPROVED] Move all API methods to their own file to enable treeshaking
+* [IMPROVED] Smaller published package size (excludes tests, etc)
 
 ## 1.0.1
 

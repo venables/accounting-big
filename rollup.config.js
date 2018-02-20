@@ -9,9 +9,8 @@ import sourcemaps from 'rollup-plugin-sourcemaps';
 export default {
   input: 'lib/index.js',
   output: {
-    file: 'dist/accounting.js',
-    format: 'umd',
-    name: 'accounting',
+    file: 'dist/accounting.es6.js',
+    format: 'es',
     sourcemap: true
   },
   plugins: [
