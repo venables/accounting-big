@@ -2,9 +2,10 @@
 
 ## master
 
-* [IMPROVED] Auto-load version from package.json
-* [IMPROVED] Use babel-preset-env instead of babel-preset-2015
-* [IMPROVED] Add prebuild, pretest, and prepublish scripts
+* [IMPROVED] Auto-load version from package.json.
+* [IMPROVED] Use babel-preset-env instead of babel-preset-2015.
+* [IMPROVED] Add prebuild, pretest, and prepublish scripts.
+* [IMPROVED] Move all API methods to their own file to enable treeshaking
 
 ## 1.0.1
 

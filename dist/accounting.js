@@ -1,8 +1,27 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.accounting = factory());
-}(this, (function () { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+	typeof define === 'function' && define.amd ? define(['exports'], factory) :
+	(factory((global.accounting = {})));
+}(this, (function (exports) { 'use strict';
+
+var version = "1.0.1";
+
+var settings = {
+  currency: {
+    symbol: '$', // default currency symbol is '$'
+    format: '%s%v', // controls output: %s = symbol, %v = value (can be object, see docs)
+    decimal: '.', // decimal point separator
+    thousand: ',', // thousands separator
+    precision: 2, // decimal places
+    grouping: 3 // digit grouping (not implemented yet)
+  },
+  number: {
+    precision: 0, // default precision on numbers is 0
+    grouping: 3, // digit grouping (not implemented yet)
+    thousand: ',',
+    decimal: '.'
+  }
+};
 
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -945,70 +964,53 @@ var big = createCommonjsModule(function (module) {
 })(commonjsGlobal);
 });
 
-var version = "1.0.1";
+/**
+ * Takes a string/array of strings, removes all formatting/cruft and returns
+ * the raw number value as a Big.js object.
+ *
+ * @example
+ *
+ * unformatBig("$ 123,456.78")
+ * // => new Big("123456.78")
+ *
+ * unformatBig("$(101.22)")
+ * // => new Big("-101.22")
+ *
+ * @alias parseBig
+ * @param {String|Array<String>} value - The number to parse/unformat
+ * @param {String} [decimal=settings.number.decimal] - The decimal separator, if non-standard
+ * @returns {Big} - The parsed number as a Big.js object
+ */
+function unformatBig() {
+  var value = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+  var decimal = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : settings.number.decimal;
 
-// Create the local library object, to be exported or referenced globally later
-var lib = {};
-
-// Current version
-lib.version = version;
-
-/* --- Exposed settings --- */
-
-// The library's settings configuration object. Contains default parameters for
-// currency and number formatting
-lib.settings = {
-  currency: {
-    symbol: '$', // default currency symbol is '$'
-    format: '%s%v', // controls output: %s = symbol, %v = value (can be object, see docs)
-    decimal: '.', // decimal point separator
-    thousand: ',', // thousands separator
-    precision: 2, // decimal places
-    grouping: 3 // digit grouping (not implemented yet)
-  },
-  number: {
-    precision: 0, // default precision on numbers is 0
-    grouping: 3, // digit grouping (not implemented yet)
-    thousand: ',',
-    decimal: '.'
+  if (Array.isArray(value)) {
+    return value.map(function (val) {
+      return unformatBig(val, decimal);
+    });
   }
-};
 
-/* --- Internal Helper Methods --- */
+  try {
+    return new big(value);
+  } catch (err) {}
 
-// Store reference to possibly-available ECMAScript 5 methods for later
-var nativeMap = Array.prototype.map,
-    nativeIsArray = Array.isArray,
-    toString = Object.prototype.toString;
+  var regex = new RegExp('[^0-9-' + decimal + ']', ['g']);
+  var unformatted = ('' + value).replace(/\((?=\d+)(.*)\)/, '-$1') // replace bracketed values with negatives
+  .replace(regex, '') // strip out any cruft
+  .replace(decimal, '.'); // make sure decimal point is standard
 
-/**
- * Tests whether supplied parameter is a string
- * from underscore.js
- */
-function isString(obj) {
-  return !!(obj === '' || obj && obj.charCodeAt && obj.substr);
+  try {
+    return new big(unformatted);
+  } catch (err) {
+    return new big(0);
+  }
 }
 
-/**
- * Tests whether supplied parameter is an array
- * from underscore.js, delegates to ECMA5's native Array.isArray
- */
-function isArray(obj) {
-  return nativeIsArray ? nativeIsArray(obj) : toString.call(obj) === '[object Array]';
-}
-
-/**
- * Tests whether supplied parameter is a true object
- */
 function isObject(obj) {
   return obj && toString.call(obj) === '[object Object]';
 }
 
-/**
- * Extends an object with a defaults object, similar to underscore's _.defaults
- *
- * Used for abstracting parameter handling from API methods
- */
 function defaults(object, defs) {
   var key;
   object = object || {};
@@ -1024,34 +1026,80 @@ function defaults(object, defs) {
 }
 
 /**
- * Implementation of `Array.map()` for iteration loops
+ * Format a number, with comma-separated thousands and custom precision.
  *
- * Returns a new Array as a result of calling `iterator` on each array value.
- * Defers to native Array.map if available
+ * @example
+ *
+ * formatNumber(123456.78)
+ * // => "123,456.78"
+ *
+ * formatNumber(123456.78, 3, '.', ',')
+ * // => "123.456,780"
+ *
+ * formatNumber(123456.78, { precision:  3 })
+ * // => "123,456.780"
+ *
+ * @alias format
+ * @param {String|Number} number - The number to format
+ * @param {Number|Object} [precision=settings.number.precision] - The precision to use, or an object containing settings
+ * @param {String} [thousand=settings.number.thousand] - The thousand separator
+ * @param {String} [decimal=settings.number.decimal] - The decimal separator
+ * @returns {String}
  */
-function map(obj, iterator, context) {
-  var results = [],
-      i,
-      j;
-
-  if (!obj) return results;
-
-  // Use native .map method if it exists:
-  if (nativeMap && obj.map === nativeMap) return obj.map(iterator, context);
-
-  // Fallback for native .map:
-  for (i = 0, j = obj.length; i < j; i++) {
-    results[i] = iterator.call(context, obj[i], i, obj);
+function formatNumber(number, precision, thousand, decimal) {
+  if (Array.isArray(number)) {
+    return number.map(function (val) {
+      return formatNumber(val, precision, thousand, decimal);
+    });
   }
-  return results;
+
+  number = unformatBig(number);
+
+  // Build options object from second param (if object) or all params, extending defaults:
+  var opts = defaults(isObject(precision) ? precision : {
+    precision: precision,
+    thousand: thousand,
+    decimal: decimal
+  }, settings.number);
+
+  var negative = number.lt(0) ? '-' : '';
+  var numberParts = number.abs().toFixed(opts.precision).split('.');
+  var base = numberParts[0];
+  var result = negative;
+
+  result += base.replace(/\B(?=(\d{3})+(?!\d))/g, opts.thousand);
+
+  if (opts.precision) {
+    result += opts.decimal + numberParts[1];
+  }
+
+  return result;
+}
+
+function isObject$1(obj) {
+  return obj && toString.call(obj) === '[object Object]';
+}
+
+function defaults$1(object, defs) {
+  var key;
+  object = object || {};
+  defs = defs || {};
+  // Iterate over object non-prototype properties:
+  for (key in defs) {
+    if (defs.hasOwnProperty(key)) {
+      // Replace values with defaults only if undefined (allow empty/zero values):
+      if (object[key] == null) object[key] = defs[key];
+    }
+  }
+  return object;
 }
 
 /**
- * Check and normalise the value of precision (must be positive integer)
+ * Tests whether supplied parameter is a string
+ * from underscore.js
  */
-function checkPrecision(val, base) {
-  val = Math.round(Math.abs(val));
-  return isNaN(val) ? base : val;
+function isString(obj) {
+  return !!(obj === '' || obj && obj.charCodeAt && obj.substr);
 }
 
 /**
@@ -1064,7 +1112,7 @@ function checkPrecision(val, base) {
  * Either string or format.pos must contain "%v" (value) to be valid
  */
 function checkCurrencyFormat(format) {
-  var defaults = lib.settings.currency.format;
+  var defaults = settings.currency.format;
 
   // Allow function as format parameter (should return string or object):
   if (typeof format === 'function') format = format();
@@ -1083,7 +1131,7 @@ function checkCurrencyFormat(format) {
   } else if (!format || !format.pos || !format.pos.match('%v')) {
 
     // If defaults is a string, casts it to an object for faster checking next time:
-    return !isString(defaults) ? defaults : lib.settings.currency.format = {
+    return !isString(defaults) ? defaults : settings.currency.format = {
       pos: defaults,
       neg: defaults.replace('%v', '-%v'),
       zero: defaults
@@ -1093,247 +1141,233 @@ function checkCurrencyFormat(format) {
   return format;
 }
 
-/* --- API Methods --- */
-
 /**
- * Takes a string/array of strings, removes all formatting/cruft and returns the raw float value
- * Alias: `accounting.parseBig(string)`
+ * Format a number, with comma-separated thousands and custom precision into
+ * a currency.
  *
- * Decimal must be included in the regular expression to match floats (defaults to
- * accounting.settings.number.decimal), so if the number uses a non-standard decimal 
- * separator, provide it as the second argument.
+ * @example
  *
- * Also matches bracketed negatives (eg. "$ (1.99)" => -1.99)
+ * formatMoney(123456.78)
+ * // => "$123,456.78"
  *
- * Doesn't throw any errors (`NaN`s become 0) but this may change in future
+ * formatMoney(123456.78, { format: '%v %s' })
+ * // => "123,456.78 $"
  *
- * @return {Big}
- */
-function unformatBig(value, decimal) {
-  // Recursively unformat arrays:
-  if (isArray(value)) {
-    return map(value, function (val) {
-      return unformatBig(val, decimal);
-    });
-  }
-
-  // Fails silently (need decent errors):
-  value = value || 0;
-
-  // Return the value as-is if it's already a number:
-  try {
-    return new big(value);
-  } catch (err) {}
-
-  // Default decimal point comes from settings, but could be set to eg. "," in opts:
-  decimal = decimal || lib.settings.number.decimal;
-
-  // Build regex to strip out everything except digits, decimal point and minus sign:
-  var regex = new RegExp('[^0-9-' + decimal + ']', ['g']);
-  var unformatted = ('' + value).replace(/\((?=\d+)(.*)\)/, '-$1') // replace bracketed values with negatives
-  .replace(regex, '') // strip out any cruft
-  .replace(decimal, '.'); // make sure decimal point is standard
-
-  try {
-    return new big(unformatted);
-  } catch (err) {
-    return new big(0);
-  }
-}
-
-lib.unformatBig = unformatBig;
-lib.parseBig = unformatBig;
-
-function unformat(value, decimal) {
-  // Recursively unformat arrays:
-  if (isArray(value)) {
-    return map(value, function (val) {
-      return Number(unformatBig(val, decimal));
-    });
-  }
-
-  return Number(unformatBig(value, decimal));
-}
-
-lib.unformat = unformat;
-lib.parse = unformat;
-
-/**
- * Implementation of toFixed() that treats floats more like decimals
+ * formatMoney(123456.78, '#', 3, '.', ',')
+ * // => "#123.456,780"
  *
- * Fixes binary rounding issues (eg. (0.615).toFixed(2) === "0.61") that present
- * problems for accounting- and finance-related software.
- */
-function toFixed(value, precision) {
-  precision = checkPrecision(precision, lib.settings.number.precision);
-
-  return unformatBig(value).toFixed(precision);
-}
-
-lib.toFixed = toFixed;
-
-/**
- * Format a number, with comma-separated thousands and custom precision/decimal places
- * Alias: `accounting.format()`
+ * formatMoney(123456.78, { precision:  3 })
+ * // => "$123,456.780"
  *
- * Localise by overriding the precision and thousand / decimal separators
- * 2nd parameter `precision` can be an object matching `settings.number`
- */
-function formatNumber(number, precision, thousand, decimal) {
-  // Resursively format arrays:
-  if (isArray(number)) {
-    return map(number, function (val) {
-      return formatNumber(val, precision, thousand, decimal);
-    });
-  }
-
-  // Clean up number:
-  number = unformatBig(number);
-
-  // Build options object from second param (if object) or all params, extending defaults:
-  var opts = defaults(isObject(precision) ? precision : {
-    precision: precision,
-    thousand: thousand,
-    decimal: decimal
-  }, lib.settings.number);
-
-  // Clean up precision
-  var usePrecision = checkPrecision(opts.precision);
-
-  // Do some calc:
-  var negative = number.lt(0) ? '-' : '';
-  var numberParts = number.abs().toFixed(usePrecision).split('.');
-  var base = numberParts[0];
-
-  var result = negative;
-
-  // Add thousands commas
-  result = result + base.replace(/\B(?=(\d{3})+(?!\d))/g, opts.thousand);
-
-  if (usePrecision) {
-    result += opts.decimal + numberParts[1];
-  }
-
-  return result;
-}
-
-lib.formatNumber = formatNumber;
-lib.format = formatNumber;
-
-/**
- * Format a number into currency
- *
- * Usage: accounting.formatMoney(number, symbol, precision, thousandsSep, decimalSep, format)
- * defaults: (0, "$", 2, ",", ".", "%s%v")
- *
- * Localise by overriding the symbol, precision, thousand / decimal separators and format
- * Second param can be an object matching `settings.currency` which is the easiest way.
- *
- * To do: tidy up the parameters
+ * @param {String|Number} number - The number to format
+ * @param {String|Object} [precision=settings.currency.symbol] - The symbol to use, or an object containing settings
+ * @param {Number} [precision=settings.currency.precision] - The precision to use, or an object containing settings
+ * @param {String} [thousand=settings.currency.thousand] - The thousand separator
+ * @param {String} [decimal=settings.currency.decimal] - The decimal separator
+ * @param {String} [format=settings.currency.format] - The output format to use
+ * @returns {String}
  */
 function formatMoney(number, symbol, precision, thousand, decimal, format) {
-  // Resursively format arrays:
-  if (isArray(number)) {
-    return map(number, function (val) {
+  if (Array.isArray(number)) {
+    return number.map(function (val) {
       return formatMoney(val, symbol, precision, thousand, decimal, format);
     });
   }
 
-  // Clean up number:
   number = unformatBig(number);
 
-  // Build options object from second param (if object) or all params, extending defaults:
-  var opts = defaults(isObject(symbol) ? symbol : {
+  var opts = defaults$1(isObject$1(symbol) ? symbol : {
     symbol: symbol,
     precision: precision,
     thousand: thousand,
     decimal: decimal,
     format: format
-  }, lib.settings.currency);
+  }, settings.currency);
 
-  // Check format (returns object with pos, neg and zero):
   var formats = checkCurrencyFormat(opts.format);
-
-  // Choose which format to use for this value:
   var useFormat = number.gt(0) ? formats.pos : number.lt(0) ? formats.neg : formats.zero;
-
-  // Return with currency symbol added:
-  return useFormat.replace('%s', opts.symbol).replace('%v', formatNumber(number.abs(), checkPrecision(opts.precision), opts.thousand, opts.decimal));
+  return useFormat.replace('%s', opts.symbol).replace('%v', formatNumber(number.abs(), opts.precision, opts.thousand, opts.decimal));
 }
 
-lib.formatMoney = formatMoney;
+function isObject$2(obj) {
+  return obj && toString.call(obj) === '[object Object]';
+}
+
+function defaults$2(object, defs) {
+  var key;
+  object = object || {};
+  defs = defs || {};
+  // Iterate over object non-prototype properties:
+  for (key in defs) {
+    if (defs.hasOwnProperty(key)) {
+      // Replace values with defaults only if undefined (allow empty/zero values):
+      if (object[key] == null) object[key] = defs[key];
+    }
+  }
+  return object;
+}
 
 /**
- * Format a list of numbers into an accounting column, padding with whitespace
- * to line up currency symbols, thousand separators and decimals places
+ * Tests whether supplied parameter is a string
+ * from underscore.js
+ */
+function isString$1(obj) {
+  return !!(obj === '' || obj && obj.charCodeAt && obj.substr);
+}
+
+/**
+ * Parses a format string or object and returns format obj for use in rendering
  *
- * List should be an array of numbers
- * Second parameter can be an object containing keys that match the params
+ * `format` is either a string with the default (positive) format, or object
+ * containing `pos` (required), `neg` and `zero` values (or a function returning
+ * either a string or object)
  *
- * Returns array of accouting-formatted number strings of same length
+ * Either string or format.pos must contain "%v" (value) to be valid
+ */
+function checkCurrencyFormat$1(format) {
+  var defaults = settings.currency.format;
+
+  // Allow function as format parameter (should return string or object):
+  if (typeof format === 'function') format = format();
+
+  // Format can be a string, in which case `value` ("%v") must be present:
+  if (isString$1(format) && format.match('%v')) {
+
+    // Create and return positive, negative and zero formats:
+    return {
+      pos: format,
+      neg: format.replace('-', '').replace('%v', '-%v'),
+      zero: format
+    };
+
+    // If no format, or object is missing valid positive value, use defaults:
+  } else if (!format || !format.pos || !format.pos.match('%v')) {
+
+    // If defaults is a string, casts it to an object for faster checking next time:
+    return !isString$1(defaults) ? defaults : settings.currency.format = {
+      pos: defaults,
+      neg: defaults.replace('%v', '-%v'),
+      zero: defaults
+    };
+  }
+  // Otherwise, assume format was fine:
+  return format;
+}
+
+/**
+ * Format a list of numbers, with comma-separated thousands and custom
+ * precision into a list of strings of the same length.
  *
- * NB: `white-space:pre` CSS rule is required on the list container to prevent
- * browsers from collapsing the whitespace in the output strings.
+ * @param {Array<String>|Array<Number>} list - The numbers to format
+ * @param {String|Object} [precision=settings.currency.symbol] - The symbol to use, or an object containing settings
+ * @param {Number} [precision=settings.currency.precision] - The precision to use, or an object containing settings
+ * @param {String} [thousand=settings.currency.thousand] - The thousand separator
+ * @param {String} [decimal=settings.currency.decimal] - The decimal separator
+ * @param {String} [format=settings.currency.format] - The output format to use
+ * @returns {String}
  */
 function formatColumn(list, symbol, precision, thousand, decimal, format) {
-  if (!list || !isArray(list)) return [];
+  if (!list || !Array.isArray(list)) return [];
 
-  // Build options object from second param (if object) or all params, extending defaults:
-  var opts = defaults(isObject(symbol) ? symbol : {
+  var opts = defaults$2(isObject$2(symbol) ? symbol : {
     symbol: symbol,
     precision: precision,
     thousand: thousand,
     decimal: decimal,
     format: format
-  }, lib.settings.currency),
+  }, settings.currency);
 
+  var formats = checkCurrencyFormat$1(opts.format);
+  var padAfterSymbol = formats.pos.indexOf('%s') < formats.pos.indexOf('%v');
+  var maxLength = 0;
 
-  // Check format (returns object with pos, neg and zero), only need pos for now:
-  formats = checkCurrencyFormat(opts.format),
-
-
-  // Whether to pad at start of string or after currency symbol:
-  padAfterSymbol = formats.pos.indexOf('%s') < formats.pos.indexOf('%v') ? true : false,
-
-
-  // Store value for the length of the longest string in the column:
-  maxLength = 0,
-
-
-  // Format the list according to options, store the length of the longest string:
-  formatted = map(list, function (val) {
-    if (isArray(val)) {
-      // Recursively format columns if list is a multi-dimensional array:
-      return lib.formatColumn(val, opts);
-    } else {
-      // Clean up the value
-      val = unformatBig(val);
-
-      // Choose which format to use for this value (pos, neg or zero):
-      var useFormat = val.gt(0) ? formats.pos : val.lt(0) ? formats.neg : formats.zero;
-
-      // Format this value, push into formatted list and save the length:
-      var fVal = useFormat.replace('%s', opts.symbol).replace('%v', formatNumber(val.abs(), checkPrecision(opts.precision), opts.thousand, opts.decimal));
-
-      if (fVal.length > maxLength) maxLength = fVal.length;
-      return fVal;
+  return list.map(function (val) {
+    if (Array.isArray(val)) {
+      return formatColumn(val, opts);
     }
-  });
 
-  // Pad each number in the list and send back the column of numbers:
-  return map(formatted, function (val) {
-    // Only if this is a string (not a nested array, which would have already been padded):
-    if (isString(val) && val.length < maxLength) {
-      // Depending on symbol position, pad after symbol or at index 0:
-      return padAfterSymbol ? val.replace(opts.symbol, opts.symbol + new Array(maxLength - val.length + 1).join(' ')) : new Array(maxLength - val.length + 1).join(' ') + val;
+    var money = formatMoney(val, opts);
+    maxLength = Math.max(maxLength, money.length);
+    return money;
+  }).map(function (val) {
+    if (isString$1(val) && val.length < maxLength) {
+      if (padAfterSymbol) {
+        return val.replace(opts.symbol, opts.symbol + new Array(maxLength - val.length + 1).join(' '));
+      }
+
+      return new Array(maxLength - val.length + 1).join(' ') + val;
     }
+
     return val;
   });
 }
 
-lib.formatColumn = formatColumn;
+/**
+ * Implementation of `toFixed` which handles rounding correctly.
+ *
+ * @example
+ *
+ * toFixed(0.615)
+ * // => "0.62"
+ *
+ * toFixed(0.1, 4)
+ * // => "0.1000"
+ *
+ * @param {String|Number} value - The number to modify
+ * @param {Number} [precision=settings.number.precision] - The precision to use
+ * @returns {String}
+ */
+function toFixed(value) {
+  var precision = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : settings.number.precision;
 
-return lib;
+  return unformatBig(value).toFixed(precision);
+}
+
+/**
+ * Takes a string/array of strings, removes all formatting/cruft and returns
+ * the raw number value as a Javascript `Number`.
+ *
+ * NOTE: You should opt to use `unformatBig` to prevent any rounding or
+ * precision errors.
+ *
+ * @example
+ *
+ * unformat("$ 123,456.78")
+ * // => "123456.78"
+ *
+ * unformat("$(101.22)")
+ * // => "-101.22"
+ *
+ * @alias parse
+ * @param {String|Array<String>} value - The number to parse/unformat
+ * @param {String} [decimal=settings.number.decimal] - The decimal separator, if non-standard
+ * @returns {Number} - The parsed Number
+ */
+function unformat(value, decimal) {
+  var result = unformatBig(value, decimal);
+
+  if (Array.isArray(result)) {
+    return result.map(function (val) {
+      return Number(val);
+    });
+  }
+
+  return Number(result);
+}
+
+exports.formatColumn = formatColumn;
+exports.formatMoney = formatMoney;
+exports.formatNumber = formatNumber;
+exports.format = formatNumber;
+exports.settings = settings;
+exports.toFixed = toFixed;
+exports.unformat = unformat;
+exports.parse = unformat;
+exports.unformatBig = unformatBig;
+exports.parseBig = unformatBig;
+exports.version = version;
+
+Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
 //# sourceMappingURL=accounting.js.map
